@@ -3,12 +3,11 @@ pragma solidity >=0.4.21;
 contract CaseMonitor{
 
     Case[] cases; 
-    mapping(bytes32 => uint) caseIdToIndex; 
+    mapping(bytes16 => uint) caseUuidToIndex; 
 
     //defines a case along with its state
     struct Case {
-        bytes32 id;
-        string uuid;
+        bytes16 uuid;
         string caseName;
         bool isStudent;
         uint date; 
@@ -23,63 +22,75 @@ contract CaseMonitor{
         Paid          //case has been paid 
     }
 
-    function _getCaseIndex(bytes32 _id) private view returns (uint) {
-        return caseIdToIndex[_id]; 
+    function _getCaseIndex(bytes16 _uuid) public view returns (uint) {
+        return caseUuidToIndex[_uuid]; 
     }
 
-    function addCase(string memory _uuid, string memory _caseName, bool _isStudent, uint _date) public {
+    function addCase(bytes16 _uuid, string memory _caseName, bool _isStudent, uint _date) public returns(uint){
 
         //hash the crucial info to get a unique id 
-        bytes32 id = keccak256(abi.encodePacked(_uuid, _caseName, _isStudent, _date)); 
+       // bytes32 id = keccak256(abi.encodePacked(_uuid, _caseName, _isStudent, _date)); 
 
         //require that the case be unique (not already added) 
-        require(!caseExists(id));
+        require(!caseExists(_uuid));
         
         //add the case 
-        cases.push(Case(id, _uuid, _caseName, _isStudent, _date, CaseState.Undefined)); 
+        cases.push(Case(_uuid, _caseName, _isStudent, _date, CaseState.Undefined)); 
         uint newIndex = cases.length-1;
-        caseIdToIndex[id] = newIndex+1;
+        caseUuidToIndex[_uuid] = newIndex;
         
         //return the unique id of the new case
-        //return uuid;
+        return newIndex;
     }
 
-    function caseExists(bytes32 _caseId) public view returns (bool) {
+    function updateCase(bytes16 _uuid, string memory _caseName, bool _isStudent, uint _date, CaseState _state) public {
+
+        require(caseExists(_uuid));
+        
+        uint index = _getCaseIndex(_uuid);
+        Case storage theCase = cases[index];
+        
+        theCase.caseName = _caseName;
+        theCase.isStudent = _isStudent;
+        theCase.date = _date;
+        theCase.state= _state;
+        
+    }
+
+    function caseExists(bytes16 _uuid) public view returns (bool) {
         if (cases.length == 0)
             return false;
-        uint index = caseIdToIndex[_caseId]; 
-        return (index > 0); 
+
+        if(cases[_getCaseIndex(_uuid)].uuid == _uuid){
+            return true;
+        }
     }
 
-    function getAllCases() public view returns (bytes32[] memory) {
-        bytes32[] memory output = new bytes32[](cases.length); 
+    function getAllCases() public view returns (bytes16[] memory) {
+        bytes16[] memory output = new bytes16[](cases.length); 
 
         //get all ids 
         if (cases.length > 0) {
             uint index = 0;
             for (uint n = cases.length; n > 0; n--) {
-                output[index++] = cases[n-1].id;
+                output[index++] = cases[n-1].uuid;
             }
         }
         
         return output; 
     }
 
-    function getCase(bytes32 _caseId) public view returns (
-        bytes32 id,
-        string memory uuid,
+    function getCase(bytes16 _uuid) public view returns (
+        bytes16 uuid,
         string memory caseName,
         bool isStudent,
         uint date, 
         CaseState state) {
+            
+        require(caseExists(_uuid));
+
+        Case storage theCase = cases[_getCaseIndex(_uuid)];
+        return (theCase.uuid, theCase.caseName, theCase.isStudent, theCase.date, theCase.state); 
         
-        //get the case
-        if (caseExists(_caseId)) {
-            Case storage theCase = cases[_getCaseIndex(_caseId)];
-            return (theCase.id, theCase.uuid, theCase.caseName, theCase.isStudent, theCase.date, theCase.state); 
-        }
-        else {
-            return (_caseId, "",  "", false, 0, CaseState.Undefined); 
-        }
     }
 }
