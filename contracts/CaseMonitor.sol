@@ -5,13 +5,17 @@ contract CaseMonitor{
     Case[] cases; 
     mapping(bytes16 => uint) caseUuidToIndex; 
 
+    
+
     //defines a case along with its state
     struct Case {
         bytes16 uuid;
         string caseName;
         bool isStudent;
-        uint date; 
-        CaseState state;
+        uint creationDate;
+        uint[] datesHistory;
+        CaseState[] statesHistory; 
+        CaseState currState;
     }
 
     //possible case states 
@@ -21,6 +25,8 @@ contract CaseMonitor{
         Rejected,     //case has been rejected
         Paid          //case has been paid 
     }
+
+    //Case currCase;
 
     function _getCaseIndex(bytes16 _uuid) public view returns (uint) {
         return caseUuidToIndex[_uuid]; 
@@ -33,9 +39,23 @@ contract CaseMonitor{
 
         //require that the case be unique (not already added) 
         require(!caseExists(_uuid));
-        
+
+        // currCase.uuid = _uuid;
+        // currCase.caseName = _caseName;
+        // currCase.isStudent = _isStudent;
+        // currCase.creationDate = _date;
+        // currCase.datesHistory.push(_date);
+        // currCase.statesHistory.push(CaseState.Undefined);
+        // currCase.currState = CaseState.Undefined;
+
+        uint[] memory datesHistory = new uint[](1);
+        datesHistory[0] = _date;
+        CaseState[] memory statesHistory = new CaseState[](1);
+        statesHistory[0] = CaseState.Undefined;
+
         //add the case 
-        cases.push(Case(_uuid, _caseName, _isStudent, _date, CaseState.Undefined)); 
+        //cases.push(currCase);
+        cases.push(Case(_uuid, _caseName, _isStudent, _date, datesHistory, statesHistory, CaseState.Undefined)); 
         uint newIndex = cases.length-1;
         caseUuidToIndex[_uuid] = newIndex;
         
@@ -52,8 +72,9 @@ contract CaseMonitor{
         
         theCase.caseName = _caseName;
         theCase.isStudent = _isStudent;
-        theCase.date = _date;
-        theCase.state= _state;
+        theCase.datesHistory.push(_date);
+        theCase.statesHistory.push(_state);
+        theCase.currState= _state;
         
     }
 
@@ -84,13 +105,15 @@ contract CaseMonitor{
         bytes16 uuid,
         string memory caseName,
         bool isStudent,
-        uint date, 
-        CaseState state) {
+        uint creationDate,
+        uint[] memory datesHistory,
+        CaseState[] memory statesHistory,
+        CaseState currState) {
             
         require(caseExists(_uuid));
 
         Case storage theCase = cases[_getCaseIndex(_uuid)];
-        return (theCase.uuid, theCase.caseName, theCase.isStudent, theCase.date, theCase.state); 
+        return (theCase.uuid, theCase.caseName, theCase.isStudent, theCase.creationDate, theCase.datesHistory, theCase.statesHistory, theCase.currState); 
         
     }
 }
