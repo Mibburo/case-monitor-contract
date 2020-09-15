@@ -12,7 +12,7 @@ contract CaseMonitor{
         bytes16 uuid;
         string caseName;
         bool isStudent;
-        uint creationDate;
+        uint latestDate;
         uint[] datesHistory;
         CaseState[] statesHistory; 
         CaseState currState;
@@ -72,6 +72,7 @@ contract CaseMonitor{
         
         theCase.caseName = _caseName;
         theCase.isStudent = _isStudent;
+        theCase.latestDate = _date;
         theCase.datesHistory.push(_date);
         theCase.statesHistory.push(_state);
         theCase.currState= _state;
@@ -113,7 +114,7 @@ contract CaseMonitor{
         require(caseExists(_uuid));
 
         Case storage theCase = cases[_getCaseIndex(_uuid)];
-        return (theCase.uuid, theCase.caseName, theCase.isStudent, theCase.creationDate, theCase.datesHistory, theCase.statesHistory, theCase.currState); 
+        return (theCase.uuid, theCase.caseName, theCase.isStudent, theCase.latestDate, theCase.datesHistory, theCase.statesHistory, theCase.currState); 
         
     }
 }
