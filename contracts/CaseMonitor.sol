@@ -122,6 +122,14 @@ contract CaseMonitor{
         require(caseExists(_uuid));
 
         uint index = _getCaseIndex(_uuid);
-        delete cases[index];
+        if(index != cases.length - 1){
+
+            // switch the case to be deleted with the last case of the array and then pop it
+            Case memory caseToDelete = cases[index];
+            cases[index] = cases[cases.length - 1];
+            cases[cases.length - 1] = caseToDelete;
+        }
+
+        cases.pop();
     }
 }
