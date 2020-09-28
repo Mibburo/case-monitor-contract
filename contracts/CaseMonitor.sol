@@ -117,4 +117,11 @@ contract CaseMonitor{
         return (theCase.uuid, theCase.caseName, theCase.isStudent, theCase.latestDate, theCase.datesHistory, theCase.statesHistory, theCase.currState); 
         
     }
+
+    function deleteCase(bytes16 _uuid) public {
+        require(caseExists(_uuid));
+
+        uint index = _getCaseIndex(_uuid);
+        delete cases[index];
+    }
 }
