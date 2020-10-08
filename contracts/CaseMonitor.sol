@@ -15,9 +15,8 @@ contract CaseMonitor{
         CaseState[] statesHistory; 
         CaseState currState;
         uint[] paymentDateHistory;
-        uint[] paymentHistory;
-        uint[] paymentOffset;
-        bool[] isOffsetPaid;
+        uint[] paymentValueHistory;
+        uint paymentOffset;
     }
 
     //possible case states 
@@ -51,14 +50,10 @@ contract CaseMonitor{
         paymentDateHistory[0] = 0;
         uint[] memory paymentHistory = new uint[](1);
         paymentHistory[0] = 0;
-        uint[] memory paymentOffset = new uint[](1);
-        paymentOffset[0] = 0;
-        bool[] memory offsetPaid = new bool[](1);
-        offsetPaid[0] = false;
 
         //add the case 
         //cases.push(currCase);
-        cases.push(Case(_uuid, _date, datesHistory, statesHistory, CaseState.Undefined, paymentDateHistory, paymentHistory, paymentOffset, offsetPaid)); 
+        cases.push(Case(_uuid, _date, datesHistory, statesHistory, CaseState.Undefined, paymentDateHistory, paymentHistory, 0)); 
         uint newIndex = cases.length-1;
         caseUuidToIndex[_uuid] = newIndex;
         
@@ -66,7 +61,7 @@ contract CaseMonitor{
         return newIndex;
     }
 
-    function updateCase(bytes16 _uuid, uint _date, CaseState _state) public {
+    function updateCase(bytes16 _uuid, uint _date, CaseState _state, uint _offset) public {
 
         require(caseExists(_uuid));
         
@@ -77,10 +72,11 @@ contract CaseMonitor{
         theCase.datesHistory.push(_date);
         theCase.statesHistory.push(_state);
         theCase.currState= _state;
+        theCase.paymentOffset = _offset;
         
     }
 
-    function addPayment(bytes16 _uuid, CaseState _state, uint _pDate, uint _payHistory, uint _offset) public{
+    function addPayment(bytes16 _uuid, CaseState _state, uint _pDate, uint _payHistory) public{
 
         require(caseExists(_uuid));
         
@@ -89,37 +85,18 @@ contract CaseMonitor{
 
         if(theCase.paymentDateHistory[0] == 0){
             theCase.paymentDateHistory[0] = _pDate;
-            theCase.paymentHistory[0] = _payHistory;
-            theCase.paymentOffset[0] = _offset;
-            theCase.isOffsetPaid[0] = false;
+            theCase.paymentValueHistory[0] = _payHistory;
         } else{
             theCase.paymentDateHistory.push(_pDate);
-            theCase.paymentHistory.push(_payHistory);
-            theCase.paymentOffset.push(_offset);
-            theCase.isOffsetPaid.push(false);
+            theCase.paymentValueHistory.push(_payHistory);
         }
 
+        theCase.paymentOffset = 0;
         theCase.latestDate = _pDate;
         theCase.datesHistory.push(_pDate);
         theCase.statesHistory.push(_state);
         theCase.currState= _state;
 
-    }
-
-    function updateExistingPayment(bytes16 _uuid, uint _pDate, uint _offset, bool _offsetPaid) public {
-        require(caseExists(_uuid));
-        
-        uint index = _getCaseIndex(_uuid);
-        Case storage theCase = cases[index];
-
-        for (uint i=0; i<theCase.paymentDateHistory.length; i++) {
-            if(theCase.paymentDateHistory[i] == _pDate){
-                theCase.paymentOffset[i] = _offset;
-                theCase.isOffsetPaid[i] = _offsetPaid;
-
-                break;
-            }
-        }
     }
 
     function caseExists(bytes16 _uuid) public view returns (bool) {
@@ -152,16 +129,15 @@ contract CaseMonitor{
         CaseState[] memory statesHistory,
         CaseState currState,
         uint[] memory paymentDateHistory,
-        uint[] memory paymentHistory,
-        uint[] memory paymentOffset,
-        bool[] memory isOffsetPaid) {
+        uint[] memory paymentValueHistory,
+        uint paymentOffset) {
             
         require(caseExists(_uuid));
 
         Case storage theCase = cases[_getCaseIndex(_uuid)];
         return (theCase.uuid, theCase.latestDate, 
                  theCase.datesHistory, theCase.statesHistory, theCase.currState,
-                 theCase.paymentDateHistory, theCase.paymentHistory, theCase.paymentOffset, theCase.isOffsetPaid); 
+                 theCase.paymentDateHistory, theCase.paymentValueHistory, theCase.paymentOffset); 
         
     }
 
