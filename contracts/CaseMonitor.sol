@@ -4,18 +4,17 @@ contract CaseMonitor{
 
     Case[] cases; 
     mapping(bytes16 => uint) caseUuidToIndex; 
-
     
-
     //defines a case along with its state
     struct Case {
         bytes16 uuid;
-        string caseName;
-        bool isStudent;
         uint latestDate;
         uint[] datesHistory;
         CaseState[] statesHistory; 
         CaseState currState;
+        uint[] paymentDateHistory;
+        uint[] paymentValueHistory;
+        uint paymentOffset;
     }
 
     //possible case states 
@@ -23,7 +22,9 @@ contract CaseMonitor{
         Undefined,    //case has not been processed
         Accepted,     //case has been accepted
         Rejected,     //case has been rejected
-        Paid          //case has been paid 
+        Paid,         //case has been paid 
+        Paused,       //case is paused
+        Failed        //case has failed to be paid
     }
 
     //Case currCase;
@@ -32,7 +33,7 @@ contract CaseMonitor{
         return caseUuidToIndex[_uuid]; 
     }
 
-    function addCase(bytes16 _uuid, string memory _caseName, bool _isStudent, uint _date) public returns(uint){
+    function addCase(bytes16 _uuid, uint _date) public returns(uint){
 
         //hash the crucial info to get a unique id 
        // bytes32 id = keccak256(abi.encodePacked(_uuid, _caseName, _isStudent, _date)); 
@@ -40,22 +41,18 @@ contract CaseMonitor{
         //require that the case be unique (not already added) 
         require(!caseExists(_uuid));
 
-        // currCase.uuid = _uuid;
-        // currCase.caseName = _caseName;
-        // currCase.isStudent = _isStudent;
-        // currCase.creationDate = _date;
-        // currCase.datesHistory.push(_date);
-        // currCase.statesHistory.push(CaseState.Undefined);
-        // currCase.currState = CaseState.Undefined;
-
         uint[] memory datesHistory = new uint[](1);
         datesHistory[0] = _date;
         CaseState[] memory statesHistory = new CaseState[](1);
         statesHistory[0] = CaseState.Undefined;
+        uint[] memory paymentDateHistory = new uint[](1);
+        paymentDateHistory[0] = 0;
+        uint[] memory paymentHistory = new uint[](1);
+        paymentHistory[0] = 0;
 
         //add the case 
         //cases.push(currCase);
-        cases.push(Case(_uuid, _caseName, _isStudent, _date, datesHistory, statesHistory, CaseState.Undefined)); 
+        cases.push(Case(_uuid, _date, datesHistory, statesHistory, CaseState.Undefined, paymentDateHistory, paymentHistory, 0)); 
         uint newIndex = cases.length-1;
         caseUuidToIndex[_uuid] = newIndex;
         
@@ -63,20 +60,42 @@ contract CaseMonitor{
         return newIndex;
     }
 
-    function updateCase(bytes16 _uuid, string memory _caseName, bool _isStudent, uint _date, CaseState _state) public {
+    function updateCase(bytes16 _uuid, uint _date, CaseState _state, uint _offset) public {
 
         require(caseExists(_uuid));
         
         uint index = _getCaseIndex(_uuid);
         Case storage theCase = cases[index];
         
-        theCase.caseName = _caseName;
-        theCase.isStudent = _isStudent;
         theCase.latestDate = _date;
         theCase.datesHistory.push(_date);
         theCase.statesHistory.push(_state);
         theCase.currState= _state;
+        theCase.paymentOffset = _offset;
         
+    }
+
+    function addPayment(bytes16 _uuid, CaseState _state, uint _pDate, uint _payHistory) public{
+
+        require(caseExists(_uuid));
+        
+        uint index = _getCaseIndex(_uuid);
+        Case storage theCase = cases[index];
+
+        if(theCase.paymentDateHistory[0] == 0){
+            theCase.paymentDateHistory[0] = _pDate;
+            theCase.paymentValueHistory[0] = _payHistory;
+        } else{
+            theCase.paymentDateHistory.push(_pDate);
+            theCase.paymentValueHistory.push(_payHistory);
+        }
+
+        theCase.paymentOffset = 0;
+        theCase.latestDate = _pDate;
+        theCase.datesHistory.push(_pDate);
+        theCase.statesHistory.push(_state);
+        theCase.currState= _state;
+
     }
 
     function caseExists(bytes16 _uuid) public view returns (bool) {
@@ -104,17 +123,34 @@ contract CaseMonitor{
 
     function getCase(bytes16 _uuid) public view returns (
         bytes16 uuid,
-        string memory caseName,
-        bool isStudent,
         uint creationDate,
         uint[] memory datesHistory,
         CaseState[] memory statesHistory,
-        CaseState currState) {
+        CaseState currState,
+        uint[] memory paymentDateHistory,
+        uint[] memory paymentValueHistory,
+        uint paymentOffset) {
             
         require(caseExists(_uuid));
 
         Case storage theCase = cases[_getCaseIndex(_uuid)];
-        return (theCase.uuid, theCase.caseName, theCase.isStudent, theCase.latestDate, theCase.datesHistory, theCase.statesHistory, theCase.currState); 
+        return (theCase.uuid, theCase.latestDate, 
+                 theCase.datesHistory, theCase.statesHistory, theCase.currState,
+                 theCase.paymentDateHistory, theCase.paymentValueHistory, theCase.paymentOffset); 
         
+    }
+
+    function deleteCase(bytes16 _uuid) public {
+        require(caseExists(_uuid));
+
+        uint index = _getCaseIndex(_uuid);
+        if(index != cases.length - 1){
+            // switch the case to be deleted with the last case of the array and then pop it
+            Case memory caseToDelete = cases[index];
+            cases[index] = cases[cases.length - 1];
+            cases[cases.length - 1] = caseToDelete;
+        }
+
+        cases.pop();
     }
 }
