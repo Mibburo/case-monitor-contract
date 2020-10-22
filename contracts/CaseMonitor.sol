@@ -4,9 +4,7 @@ contract CaseMonitor{
 
     Case[] cases; 
     mapping(bytes16 => uint) caseUuidToIndex; 
-
     
-
     //defines a case along with its state
     struct Case {
         bytes16 uuid;
@@ -25,7 +23,8 @@ contract CaseMonitor{
         Accepted,     //case has been accepted
         Rejected,     //case has been rejected
         Paid,         //case has been paid 
-        Paused        //case is paused
+        Paused,       //case is paused
+        Failed        //case has failed to be paid
     }
 
     //Case currCase;
