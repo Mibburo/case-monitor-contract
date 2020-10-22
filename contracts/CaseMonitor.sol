@@ -14,6 +14,7 @@ contract CaseMonitor{
         CaseState currState;
         uint[] paymentDateHistory;
         uint[] paymentValueHistory;
+        CaseState[] paymentStateHistory;
         uint paymentOffset;
     }
 
@@ -27,16 +28,11 @@ contract CaseMonitor{
         Failed        //case has failed to be paid
     }
 
-    //Case currCase;
-
     function _getCaseIndex(bytes16 _uuid) public view returns (uint) {
         return caseUuidToIndex[_uuid]; 
     }
 
     function addCase(bytes16 _uuid, uint _date) public returns(uint){
-
-        //hash the crucial info to get a unique id 
-       // bytes32 id = keccak256(abi.encodePacked(_uuid, _caseName, _isStudent, _date)); 
 
         //require that the case be unique (not already added) 
         require(!caseExists(_uuid));
@@ -49,10 +45,11 @@ contract CaseMonitor{
         paymentDateHistory[0] = 0;
         uint[] memory paymentHistory = new uint[](1);
         paymentHistory[0] = 0;
+        CaseState[] memory paymentStateHistory = new CaseState[](1);
+        paymentStateHistory[0] = CaseState.Undefined;
 
         //add the case 
-        //cases.push(currCase);
-        cases.push(Case(_uuid, _date, datesHistory, statesHistory, CaseState.Undefined, paymentDateHistory, paymentHistory, 0)); 
+        cases.push(Case(_uuid, _date, datesHistory, statesHistory, CaseState.Undefined, paymentDateHistory, paymentHistory, paymentStateHistory, 0)); 
         uint newIndex = cases.length-1;
         caseUuidToIndex[_uuid] = newIndex;
         
@@ -72,7 +69,6 @@ contract CaseMonitor{
         theCase.statesHistory.push(_state);
         theCase.currState= _state;
         theCase.paymentOffset = _offset;
-        
     }
 
     function addPayment(bytes16 _uuid, CaseState _state, uint _pDate, uint _payHistory) public{
@@ -85,17 +81,18 @@ contract CaseMonitor{
         if(theCase.paymentDateHistory[0] == 0){
             theCase.paymentDateHistory[0] = _pDate;
             theCase.paymentValueHistory[0] = _payHistory;
+            theCase.paymentStateHistory[0] = _state;
         } else{
             theCase.paymentDateHistory.push(_pDate);
             theCase.paymentValueHistory.push(_payHistory);
+            theCase.paymentStateHistory.push(_state);
         }
 
         theCase.paymentOffset = 0;
-        theCase.latestDate = _pDate;
-        theCase.datesHistory.push(_pDate);
-        theCase.statesHistory.push(_state);
-        theCase.currState= _state;
-
+        // theCase.latestDate = _pDate;
+        // theCase.datesHistory.push(_pDate);
+        // theCase.statesHistory.push(_state);
+        // theCase.currState= _state;
     }
 
     function caseExists(bytes16 _uuid) public view returns (bool) {
@@ -117,7 +114,6 @@ contract CaseMonitor{
                 output[index++] = cases[n-1].uuid;
             }
         }
-        
         return output; 
     }
 
@@ -129,6 +125,7 @@ contract CaseMonitor{
         CaseState currState,
         uint[] memory paymentDateHistory,
         uint[] memory paymentValueHistory,
+        CaseState[] memory paymentStateHistory,
         uint paymentOffset) {
             
         require(caseExists(_uuid));
@@ -136,7 +133,7 @@ contract CaseMonitor{
         Case storage theCase = cases[_getCaseIndex(_uuid)];
         return (theCase.uuid, theCase.latestDate, 
                  theCase.datesHistory, theCase.statesHistory, theCase.currState,
-                 theCase.paymentDateHistory, theCase.paymentValueHistory, theCase.paymentOffset); 
+                 theCase.paymentDateHistory, theCase.paymentValueHistory, theCase.paymentStateHistory, theCase.paymentOffset); 
         
     }
 
