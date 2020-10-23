@@ -71,7 +71,7 @@ contract CaseMonitor{
         theCase.paymentOffset = _offset;
     }
 
-    function addPayment(bytes16 _uuid, CaseState _state, uint _pDate, uint _payHistory) public{
+    function addPayment(bytes16 _uuid, CaseState _state, uint _pDate, uint _payHistory, uint _offset) public{
 
         require(caseExists(_uuid));
         
@@ -88,7 +88,7 @@ contract CaseMonitor{
             theCase.paymentStateHistory.push(_state);
         }
 
-        theCase.paymentOffset = 0;
+        theCase.paymentOffset = _offset;
         // theCase.latestDate = _pDate;
         // theCase.datesHistory.push(_pDate);
         // theCase.statesHistory.push(_state);
