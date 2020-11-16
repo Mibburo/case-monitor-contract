@@ -24,8 +24,9 @@ contract CaseMonitor{
         Accepted,     //case has been accepted
         Rejected,     //case has been rejected
         Paid,         //case has been paid 
-        Paused,       //case is paused
-        Failed        //case has failed to be paid
+        Suspended,    //case has been suspended
+        Failed,       //case has failed to be paid
+        NonPrincipal  //case belongs to a non principal household member
     }
 
     function _getCaseIndex(bytes16 _uuid) public view returns (uint) {
